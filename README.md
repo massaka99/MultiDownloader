@@ -22,6 +22,7 @@ Dette projekt er et Python-baseret program til at downloade videoer og lyd fra f
 ## Installation
 
 - **Download** ffmpeg-master-latest-win64-gpl og placer den i samme mappe som Downloader.py.
+  Den kræver desuden en manuel opsættelse ved at target **ffmpeg.exe** filen i miljøvariablerne.
   
 - **Installer** de nødvendige Python-pakker:
   
