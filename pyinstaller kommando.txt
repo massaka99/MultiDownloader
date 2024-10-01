@@ -1,0 +1,1 @@
+python -m PyInstaller --onefile Downloader.py --name MultiDownloader --add-data "cookies.txt;." --add-data "ffmpeg-master-latest-win64-gpl;ffmpeg-master-latest-win64-gpl"
