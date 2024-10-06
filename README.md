@@ -29,7 +29,7 @@ Dette projekt er et Python-baseret program til at downloade videoer og lyd fra f
 - **Kør** Downloader.py for at starte programmet, eller brug MultiDownloader.exe for at køre det uden Python.
   
 
-## Divserse
+## Diverse
 
 - **cookies.txt**: Denne fil kan oprettes med følgende browser extension (https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) og placeres i samme DIR som resterende filer.
 
