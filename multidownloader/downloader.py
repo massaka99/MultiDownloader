@@ -49,7 +49,9 @@ def build_common_opts(config: DownloadConfig) -> dict:
 
 
 def build_opts(config: DownloadConfig, download_type: str) -> dict:
-    format_selector = config.format_selector or "bestvideo*+bestaudio/best"
+    format_selector = config.format_selector or (
+        "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]"
+    )
 
     opts = build_common_opts(config)
     if download_type == "audio":
