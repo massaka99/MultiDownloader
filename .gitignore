@@ -1,5 +1,9 @@
-*.exe
-*.txt
+dist/
+build/
 .tools/
 __pycache__/
-*.pyc
+*.py[cod]
+*.spec
+*.exe
+cookies.txt
+ffmpeg.zip

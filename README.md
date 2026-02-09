@@ -1,96 +1,96 @@
-# Multi-Downloader (GUI + CLI)
+# Multi-Downloader (CLI)
 
 > Legal note: This tool is for downloading content you have rights or permission to access. Usage may be restricted by site terms, copyright law, or local regulations. You are responsible for complying with applicable rules.
 
-Downloader built on `yt-dlp` with a GUI and a CLI.
+Downloader built on `yt-dlp` with a command-line interface.
 
 ## Features
 
-- GUI with mode picker, theme toggle, cookies, output folder, and activity log
-- GUI remembers theme, output, and cookies path between runs
-- Closing the GUI exits the app (no tray behavior)
-- CLI with interactive prompts (v/a/b) and auto-uses `cookies.txt` when present
-- Bundled ffmpeg
+- CLI supports URLs from arguments, input files, stdin, or interactive prompts.
+- Download mode selection: `video`, `audio`, or `both` (also `v/a/b`).
+- Optional cookies support with `-c/--cookies`, plus auto-detect of local `cookies.txt`.
+- Optional concurrent worker/fragment tuning.
+- Windows build script bundles ffmpeg/ffprobe into the executable.
 
 ## Architecture
 
-- GUI entry: `multi_downloader.py`
-- CLI entry: `multi_downloader_cli.py`
-- Backend: `multidownloader/`
-- GUI assets: `multidownloader/webapp/`
+- Module entry point: `python -m multidownloader`
+- Script entry point: `multi_downloader_cli.py`
+- CLI package: `multidownloader/cli/`
+- Core download logic: `multidownloader/core/`
 
-## Run (from source)
+### Project Layout
+
+```text
+multidownloader/
+  cli/
+    app.py
+    args.py
+    interactive.py
+  core/
+    config.py
+    downloader.py
+    paths.py
+    urls.py
+```
+
+## Run From Source
 
 ```powershell
-python .\multi_downloader.py
+python -m pip install -r requirements.txt
+python -m multidownloader
 python .\multi_downloader_cli.py
 ```
 
-The CLI will prompt for URLs and mode when launched without arguments.
+The CLI prompts for URLs and mode if started without URL arguments or input.
 
-## Build Windows exe
+Example:
+
+```powershell
+python .\multi_downloader_cli.py -m audio -o .\downloads https://example.com/video
+```
+
+## Build Windows Exe
 
 ```powershell
 .\build_exe.ps1
 ```
 
-The build script downloads ffmpeg, stops any running MultiDownloader exe instances, bundles `cookies.txt` (if present), and outputs:
+The build script downloads ffmpeg (unless already available), installs dependencies, bundles `cookies.txt` (if present), and outputs:
 
-- `dist\MultiDownloader.exe` (GUI)
-- `dist\MultiDownloader-CLI.exe` (CLI)
+- `dist\MultiDownloader.exe` (CLI)
 
-After a successful build, it cleans up `build\` and the `.spec` files.
-
-> Note: The build can take several minutes, especially the first time.
-
-The exe files are not committed to git (see `.gitignore`). Anyone cloning the repo should run `build_exe.ps1` to produce their own exe files.
-
-### Create your own executable
-
-1. Install Python 3.11+.
-2. (Optional) Place `cookies.txt` next to `build_exe.ps1` to embed it.
-3. (Optional) Place `app.ico` next to `build_exe.ps1` to set the exe icon.
-4. Run the build script:
-
-```powershell
-.\build_exe.ps1
-```
-
-5. Your exe files will be in `dist\`.
+After a successful build, it cleans up `build\` and generated `.spec` files.
 
 ## Cookies
 
-Cookies are only needed for sites that require login, age verification, or private access. If a site works without login, you can skip cookies entirely.
+Cookies are only needed for sites that require login, age verification, or private access.
 
-- The `cookies.txt` must contain cookies from the same site you are downloading from.
-- Cookies expire; if downloads fail later, export a fresh file.
-- If you embed `cookies.txt`, the GUI will default to it unless you pick another file.
-- The CLI will always use the embedded `cookies.txt` unless you override with `-c`.
-- If you update `cookies.txt`, rebuild the exe to embed the new file, or pass a path with `-c`.
+- Use `-c path\to\cookies.txt` to provide a specific cookies file.
+- If `-c` is not supplied, the CLI auto-detects local `cookies.txt` when available.
+- Cookies expire; refresh and export again if downloads start failing.
 
-### How to create cookies.txt (Chrome/Edge)
+### Create `cookies.txt` (Chrome/Edge)
 
-1. Install the extension `Get cookies.txt (LOCALLY)`: https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc
-2. Log into the site you want to download from.
-3. Click the extension and export cookies for the current site to `cookies.txt`.
-4. Save the file and either place it next to `build_exe.ps1` or select it in the GUI.
+1. Install `Get cookies.txt (LOCALLY)`: https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc
+2. Log into the target site.
+3. Export cookies for that site to `cookies.txt`.
 
 ## FFmpeg
 
-- The Windows exe bundles ffmpeg automatically, so you do not need it installed.
-- If you run from source, install ffmpeg or drop `ffmpeg.exe` next to the script (or set `MULTIDOWNLOADER_FFMPEG` to the ffmpeg folder).
+- The Windows executable bundles ffmpeg/ffprobe automatically.
+- When running from source, install ffmpeg or place `ffmpeg.exe` where `MULTIDOWNLOADER_FFMPEG` points.
 
 ## Troubleshooting YouTube 403
 
-If you see `HTTP Error 403: Forbidden` or a prompt to sign in, YouTube is blocking the request.
+If you see `HTTP Error 403: Forbidden` or sign-in prompts:
 
-Try this:
-1. Export fresh cookies for YouTube and embed them.
-2. Update yt-dlp and rebuild:
+1. Export fresh YouTube cookies.
+2. Update `yt-dlp` and rebuild:
 
 ```powershell
 python -m pip install -U yt-dlp
 .\build_exe.ps1
 ```
 
-3. Avoid VPNs or rate limits (YouTube can block IPs).
+3. Retry without VPN/rate-limited routes if applicable.

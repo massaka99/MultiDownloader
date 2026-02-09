@@ -1,42 +1,44 @@
-"""Configuration and defaults."""
+"""Configuration objects and path resolution for downloads."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Literal
 
 from .paths import find_default_cookies, find_ffmpeg
+
+Mode = Literal["video", "audio", "both"]
 
 DEFAULT_OUTPUT = Path.home() / "Downloads"
 DEFAULT_WORKERS = 3
 DEFAULT_FRAGMENTS = 8
 
 
-@dataclass
+@dataclass(slots=True)
 class DownloadConfig:
-    download_type: str
+    mode: Mode
     output: Path
-    cookies: Optional[Path]
-    format_selector: Optional[str]
-    continue_dl: bool
+    cookies: Path | None
     workers: int = DEFAULT_WORKERS
     fragments: int = DEFAULT_FRAGMENTS
-    ffmpeg_location: Optional[Path] = None
+    ffmpeg_location: Path | None = None
+    format_selector: str | None = None
+    continue_download: bool = True
 
 
 def ensure_output_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def resolve_output_path(value: str) -> Path:
+def resolve_output_path(value: str | None) -> Path:
     target = value or str(DEFAULT_OUTPUT)
     output = Path(target).expanduser()
     ensure_output_dir(output)
     return output
 
 
-def resolve_cookies(provided: Optional[str]) -> Optional[Path]:
+def resolve_cookies(provided: str | None) -> Path | None:
     if provided:
         path = Path(provided).expanduser()
         if not path.is_file():
@@ -45,5 +47,5 @@ def resolve_cookies(provided: Optional[str]) -> Optional[Path]:
     return find_default_cookies()
 
 
-def resolve_ffmpeg() -> Optional[Path]:
+def resolve_ffmpeg() -> Path | None:
     return find_ffmpeg()

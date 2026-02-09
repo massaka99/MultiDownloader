@@ -52,25 +52,21 @@ function Invoke-PyInstaller {
         [Parameter(Mandatory = $true)]
         [string]$Name,
         [Parameter(Mandatory = $true)]
-        [string]$Entry,
-        [switch]$NoConsole,
-        [string[]]$ExtraArgs = @()
+        [string]$Entry
     )
 
     $pyInstallerArgs = @(
+        '--clean',
         '--onefile',
         '--name', $Name,
+        '--workpath', $BuildDir,
+        '--specpath', $PSScriptRoot,
         '--distpath', $OutputDir
     )
-
-    if ($NoConsole) {
-        $pyInstallerArgs += '--noconsole'
-    }
 
     $pyInstallerArgs += $cookieArgs
     $pyInstallerArgs += $iconArgs
     $pyInstallerArgs += $ffmpegArgs
-    $pyInstallerArgs += $ExtraArgs
     $pyInstallerArgs += $Entry
 
     python -m PyInstaller @pyInstallerArgs
@@ -155,18 +151,11 @@ python -m pip install -r requirements.txt
 python -m pip install pyinstaller
 
 Stop-RunningApp -Name 'MultiDownloader'
-Stop-RunningApp -Name 'MultiDownloader-CLI'
 
-Invoke-PyInstaller -Name 'MultiDownloader' -Entry 'multi_downloader.py' -NoConsole -ExtraArgs @(
-    '--add-data', 'multidownloader\\webapp;multidownloader\\webapp',
-    '--collect-submodules', 'webview'
-)
-
-Invoke-PyInstaller -Name 'MultiDownloader-CLI' -Entry 'multi_downloader_cli.py'
+Invoke-PyInstaller -Name 'MultiDownloader' -Entry 'multi_downloader_cli.py'
 
 $specPaths = @(
-    'MultiDownloader.spec',
-    'MultiDownloader-CLI.spec'
+    'MultiDownloader.spec'
 ) | ForEach-Object { Join-Path -Path $PSScriptRoot -ChildPath $_ }
 
 Remove-Item -LiteralPath $BuildDir -Recurse -Force -ErrorAction SilentlyContinue
