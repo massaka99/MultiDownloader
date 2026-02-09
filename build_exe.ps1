@@ -148,7 +148,7 @@ $ffmpegArgs = @(
 
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install pyinstaller
+python -m pip install -r requirements-build.txt
 
 Stop-RunningApp -Name 'MultiDownloader'
 

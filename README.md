@@ -56,11 +56,21 @@ python .\multi_downloader_cli.py -m audio -o .\downloads https://example.com/vid
 .\build_exe.ps1
 ```
 
-The build script downloads ffmpeg (unless already available), installs dependencies, bundles `cookies.txt` (if present), and outputs:
+The build script downloads ffmpeg (unless already available), installs dependencies from `requirements.txt` and `requirements-build.txt`, bundles `cookies.txt` (if present), and outputs:
 
 - `dist\MultiDownloader.exe` (CLI)
 
 After a successful build, it cleans up `build\` and generated `.spec` files.
+
+## Testing
+
+Run the full unit test suite:
+
+```powershell
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+CI (`.github/workflows/ci.yml`) runs tests plus CLI smoke checks on Windows and Linux for Python 3.11-3.13.
 
 ## Cookies
 
