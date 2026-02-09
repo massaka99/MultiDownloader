@@ -1,2 +1,2 @@
-__all__ = ["ui"]
+__all__ = ["cli", "core"]
 __version__ = "1.1.0"
