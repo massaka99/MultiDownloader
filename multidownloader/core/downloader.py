@@ -3,22 +3,20 @@
 from __future__ import annotations
 
 import concurrent.futures as futures
+from dataclasses import replace
+import shutil
 from typing import Callable, Iterable
 
 import yt_dlp
+from yt_dlp.utils import DownloadError
 
 from .config import DownloadConfig, ensure_output_dir
 from .urls import unique_urls
 
 Logger = Callable[[str], None]
 
-_DEFAULT_VIDEO_SELECTOR = "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]"
 _DEFAULT_AUDIO_SELECTOR = "bestaudio/best"
-_BROWSER_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/126.0 Safari/537.36"
-)
+_DEFAULT_VIDEO_SELECTOR = "bv*+ba/b"
 
 
 def _log(logger: Logger | None, message: str) -> None:
@@ -33,47 +31,74 @@ def _audio_postprocessor() -> dict[str, str]:
     }
 
 
+def _detect_js_runtime() -> dict[str, dict]:
+    deno = shutil.which("deno")
+    if deno:
+        return {"deno": {"path": deno}}
+    node = shutil.which("node")
+    if node:
+        return {"node": {"path": node}}
+    return {}
+
+
+def _is_youtube_url(url: str) -> bool:
+    lowered = url.lower()
+    return "youtube.com/" in lowered or "youtu.be/" in lowered
+
+
+def _has_ffmpeg(config: DownloadConfig) -> bool:
+    if config.ffmpeg_location and config.ffmpeg_location.is_file():
+        return True
+    return shutil.which("ffmpeg") is not None
+
+
 def build_options(config: DownloadConfig) -> dict:
+    has_ffmpeg = _has_ffmpeg(config)
     options: dict = {
         "outtmpl": str(config.output / "%(title).200s [%(id)s].%(ext)s"),
         "paths": {"home": str(config.output)},
         "noplaylist": True,
-        "merge_output_format": "mp4",
-        "nocheckcertificate": True,
         "no_warnings": False,
         "quiet": False,
         "retries": 5,
         "fragment_retries": 5,
+        "extractor_retries": 5,
         "concurrent_fragment_downloads": config.fragments,
         "continuedl": config.continue_download,
         "ignoreerrors": False,
         "overwrites": False,
         "clean_infojson": True,
-        "http_headers": {"User-Agent": _BROWSER_USER_AGENT},
+        "windowsfilenames": True,
+        "trim_file_name": 200,
+        "geo_bypass": True,
+        "socket_timeout": 30,
     }
 
     if config.cookies:
         options["cookiefile"] = str(config.cookies)
     if config.ffmpeg_location:
         options["ffmpeg_location"] = str(config.ffmpeg_location)
+    js_runtimes = _detect_js_runtime()
+    if js_runtimes:
+        options["js_runtimes"] = js_runtimes
+        options["remote_components"] = ("ejs:github",)
 
-    format_selector = config.format_selector or _DEFAULT_VIDEO_SELECTOR
     if config.mode == "audio":
         options["format"] = config.format_selector or _DEFAULT_AUDIO_SELECTOR
-        options["postprocessors"] = [_audio_postprocessor()]
+        if has_ffmpeg:
+            options["postprocessors"] = [_audio_postprocessor()]
     elif config.mode == "both":
-        options["format"] = format_selector
-        options["postprocessors"] = [_audio_postprocessor()]
-        options["keepvideo"] = True
+        options["format"] = config.format_selector or _DEFAULT_VIDEO_SELECTOR
+        if has_ffmpeg:
+            options["postprocessors"] = [_audio_postprocessor()]
+            options["keepvideo"] = True
     else:
-        options["format"] = format_selector
+        options["format"] = config.format_selector or _DEFAULT_VIDEO_SELECTOR
 
     return options
 
 
-def download_single(url: str, config: DownloadConfig, logger: Logger | None) -> None:
-    options = build_options(config)
-
+def _attach_progress_hook(options: dict, logger: Logger | None) -> None:
     def _progress_hook(status: dict) -> None:
         if status.get("status") != "finished":
             return
@@ -85,10 +110,28 @@ def download_single(url: str, config: DownloadConfig, logger: Logger | None) -> 
 
     options["progress_hooks"] = [_progress_hook]
 
-    mode_label = {"video": "v", "audio": "a", "both": "b"}[config.mode]
+
+def _download(url: str, mode_label: str, options: dict, logger: Logger | None) -> None:
+    _attach_progress_hook(options, logger)
     with yt_dlp.YoutubeDL(options) as ydl:
         _log(logger, f"-> {mode_label} | {url}")
         ydl.download([url])
+
+
+def download_single(url: str, config: DownloadConfig, logger: Logger | None) -> None:
+    mode_label = {"video": "v", "audio": "a", "both": "b"}[config.mode]
+    has_ffmpeg = _has_ffmpeg(config)
+    if config.mode in {"audio", "both"} and not has_ffmpeg:
+        _log(logger, "[warn] ffmpeg not found: downloading best available stream without conversion")
+    if config.cookies and not config.cookies_explicit and _is_youtube_url(url):
+        no_cookie_config = replace(config, cookies=None)
+        try:
+            _download(url, mode_label, build_options(no_cookie_config), logger)
+            return
+        except DownloadError:
+            _log(logger, "[info] unauthenticated attempt failed, retrying with cookies")
+
+    _download(url, mode_label, build_options(config), logger)
 
 
 def run_batch(urls: Iterable[str], config: DownloadConfig, logger: Logger | None = None) -> list[str]:

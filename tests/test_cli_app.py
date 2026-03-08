@@ -55,7 +55,6 @@ class TestCliApp(unittest.TestCase):
     def test_main_returns_2_when_no_urls(self) -> None:
         with (
             patch("multidownloader.cli.app.sys.stdin", _FakeTTY("")),
-            patch("multidownloader.cli.app.prompt_urls", return_value=[]),
             patch("multidownloader.cli.app.print"),
         ):
             code = app.main([])
@@ -90,6 +89,7 @@ class TestCliApp(unittest.TestCase):
         config_arg = run_batch.call_args[0][1]
         self.assertEqual(config_arg.mode, "audio")
         self.assertEqual(config_arg.output, output)
+        self.assertFalse(config_arg.cookies_explicit)
 
 
 if __name__ == "__main__":

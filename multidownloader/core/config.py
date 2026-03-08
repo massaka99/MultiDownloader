@@ -20,6 +20,7 @@ class DownloadConfig:
     mode: Mode
     output: Path
     cookies: Path | None
+    cookies_explicit: bool = False
     workers: int = DEFAULT_WORKERS
     fragments: int = DEFAULT_FRAGMENTS
     ffmpeg_location: Path | None = None

@@ -53,6 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         type=parse_mode,
         metavar="{video|audio|both|v|a|b}",
+        default="video",
         help="Download mode.",
     )
     parser.add_argument(

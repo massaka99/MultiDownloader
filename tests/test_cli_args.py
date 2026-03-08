@@ -38,6 +38,11 @@ class TestCliArgs(unittest.TestCase):
         self.assertEqual(args.mode, "audio")
         self.assertEqual(args.urls, ["https://example.com"])
 
+    def test_parser_default_mode_is_video(self) -> None:
+        parser = build_parser()
+        args = parser.parse_args(["https://example.com"])
+        self.assertEqual(args.mode, "video")
+
 
 if __name__ == "__main__":
     unittest.main()
