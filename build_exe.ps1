@@ -197,11 +197,11 @@ try {
     }
 
     $iconArgs = @()
-    $iconPath = Join-Path $PSScriptRoot 'app.ico'
+    $iconPath = Join-Path $PSScriptRoot 'assets\icons\app.ico'
     if (Test-Path -LiteralPath $iconPath) {
         $iconArgs += @('--icon', $iconPath)
     } else {
-        Write-Warning 'app.ico not found. The exe will use the default icon.'
+        Write-Warning 'assets\icons\app.ico not found. The exe will use the default icon.'
     }
 
     $ffmpegArgs = @('--add-binary', "$ffmpegExe;.")
