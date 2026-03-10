@@ -10,6 +10,32 @@ python -m pip install -r requirements.txt
 python .\multi_downloader_cli.py "URL_HER"
 ```
 
+Interaktiv brug i terminalen:
+
+```powershell
+python .\multi_downloader_cli.py
+```
+
+## GUI (nem og farverig)
+
+Start en simpel grafisk version:
+
+```powershell
+python .\multi_downloader_gui.py
+```
+
+Alternativt:
+
+```powershell
+python -m multidownloader.gui
+```
+
+I GUI'en kan du:
+- indsætte links (en pr. linje)
+- vælge `video`, `audio` eller `both`
+- vælge output-mappe og valgfri `cookies.txt`
+- starte download og følge live-log i vinduet
+
 Eksempel (kun lyd):
 
 ```powershell
@@ -25,6 +51,10 @@ python .\multi_downloader_cli.py -m audio "https://www.youtube.com/watch?v=..."
 Færdig fil ligger her:
 
 `dist\MultiDownloader.exe`
+
+GUI-versionen bliver også bygget:
+
+`dist\MultiDownloaderGUI.exe`
 
 ## Cookies (valgfrit)
 

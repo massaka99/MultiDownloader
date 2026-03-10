@@ -9,6 +9,7 @@ from typing import Sequence
 
 from ..core import DownloadConfig, parse_urls, resolve_cookies, resolve_ffmpeg, resolve_output_path, run_batch, unique_urls
 from .args import build_parser
+from .interactive import prompt_mode, prompt_urls
 
 
 def _read_text(path: Path) -> str:
@@ -37,7 +38,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    stdin_text = None if sys.stdin.isatty() else sys.stdin.read()
+    stdin_is_tty = sys.stdin.isatty()
+    stdin_text = None if stdin_is_tty else sys.stdin.read()
+    interactive = stdin_is_tty and not args.urls and not args.input
 
     try:
         urls = _collect_urls(args, stdin_text)
@@ -48,19 +51,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"[error] Failed to read input file: {exc}", file=sys.stderr)
         return 2
 
+    if interactive and not urls:
+        urls = prompt_urls()
+
     if not urls:
         print("[error] No URLs provided.", file=sys.stderr)
         parser.print_help()
+        if interactive:
+            input("Press Enter to exit...")
         return 2
 
+    mode = args.mode or ("video" if not interactive else prompt_mode())
     try:
         cookies_path = resolve_cookies(args.cookies)
     except FileNotFoundError as exc:
         print(f"[error] {exc}", file=sys.stderr)
+        if interactive:
+            input("Press Enter to exit...")
         return 2
 
     config = DownloadConfig(
-        mode=args.mode,
+        mode=mode,
         output=resolve_output_path(args.output),
         cookies=cookies_path,
         cookies_explicit=bool(args.cookies),
@@ -73,4 +84,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("[warn] ffmpeg not found. Some formats may fail.")
 
     errors = run_batch(urls, config, logger=print)
+    if interactive:
+        input("Press Enter to exit...")
     return 1 if errors else 0

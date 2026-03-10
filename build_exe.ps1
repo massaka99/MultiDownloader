@@ -106,7 +106,8 @@ function Invoke-PyInstaller {
         [Parameter(Mandatory = $true)]
         [string]$Name,
         [Parameter(Mandatory = $true)]
-        [string]$Entry
+        [string]$Entry,
+        [switch]$Windowed
     )
 
     $entryPath = Join-Path $PSScriptRoot $Entry
@@ -122,6 +123,9 @@ function Invoke-PyInstaller {
         '--specpath', $PSScriptRoot,
         '--distpath', $OutputDir
     )
+    if ($Windowed) {
+        $pyInstallerArgs += '--noconsole'
+    }
 
     $pyInstallerArgs += $cookieArgs
     $pyInstallerArgs += $iconArgs
@@ -212,11 +216,14 @@ try {
     Invoke-PythonChecked -Args @('-m', 'pip', 'install', '-r', 'requirements-build.txt') -Description 'build dependencies install'
 
     Stop-RunningApp -Name 'MultiDownloader'
+    Stop-RunningApp -Name 'MultiDownloaderGUI'
 
     Invoke-PyInstaller -Name 'MultiDownloader' -Entry 'multi_downloader_cli.py'
+    Invoke-PyInstaller -Name 'MultiDownloaderGUI' -Entry 'multi_downloader_gui.py' -Windowed
 
     $specPaths = @(
-        'MultiDownloader.spec'
+        'MultiDownloader.spec',
+        'MultiDownloaderGUI.spec'
     ) | ForEach-Object { Join-Path -Path $PSScriptRoot -ChildPath $_ }
 
     Remove-Item -LiteralPath $BuildDir -Recurse -Force -ErrorAction SilentlyContinue

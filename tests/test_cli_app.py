@@ -55,6 +55,8 @@ class TestCliApp(unittest.TestCase):
     def test_main_returns_2_when_no_urls(self) -> None:
         with (
             patch("multidownloader.cli.app.sys.stdin", _FakeTTY("")),
+            patch("multidownloader.cli.app.prompt_urls", return_value=[]),
+            patch("multidownloader.cli.app.input", return_value=""),
             patch("multidownloader.cli.app.print"),
         ):
             code = app.main([])
@@ -90,6 +92,27 @@ class TestCliApp(unittest.TestCase):
         self.assertEqual(config_arg.mode, "audio")
         self.assertEqual(config_arg.output, output)
         self.assertFalse(config_arg.cookies_explicit)
+
+    def test_main_interactive_prompts_for_urls_and_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            with (
+                patch("multidownloader.cli.app.sys.stdin", _FakeTTY("")),
+                patch("multidownloader.cli.app.prompt_urls", return_value=["https://example.com/1"]),
+                patch("multidownloader.cli.app.prompt_mode", return_value="audio"),
+                patch("multidownloader.cli.app.resolve_cookies", return_value=None),
+                patch("multidownloader.cli.app.resolve_ffmpeg", return_value=output / "ffmpeg.exe"),
+                patch("multidownloader.cli.app.resolve_output_path", return_value=output),
+                patch("multidownloader.cli.app.run_batch", return_value=[]) as run_batch,
+                patch("multidownloader.cli.app.input", return_value=""),
+                patch("multidownloader.cli.app.print"),
+            ):
+                code = app.main([])
+
+        self.assertEqual(code, 0)
+        self.assertTrue(run_batch.called)
+        config_arg = run_batch.call_args[0][1]
+        self.assertEqual(config_arg.mode, "audio")
 
 
 if __name__ == "__main__":
